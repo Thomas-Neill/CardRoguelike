@@ -358,3 +358,25 @@ class CardRenderer:
         s2 = self.titleFont.render("Back",True,(0,0,0))
         surface.blit(s2,(rect2.x + rect2.w /2 - s2.get_rect().w/2, rect2.y + rect2.h/2 - TITLE_SIZE/2))
         return rect2
+
+    def drawCardReward(self,surface,cards,ds,hover=[],highlights=[]):
+        writeText((self.bigTitleFont,),surface,"Card Reward",pygame.rect.Rect(0,0,SCREEN_W,SCREEN_H))
+        w = len(cards)* CARD_W * 3 - CARD_W*2
+        x = SCREEN_W/2 - w/2
+        y = SCREEN_H/2 - CARD_H/2
+        rects = []
+        n = 0
+        for card in cards:
+            card.highlight = n in highlights
+            card.showTooltips = n in hover
+            self.draw(surface,Vector(x,y),card)
+            rects.append((x,y,CARD_W,CARD_H))
+            x += CARD_W*3
+            n += 1
+        rect2 = pygame.rect.Rect(SCREEN_W/2 - STARTBUTTON_W/2,SCREEN_H/2 + CARD_H*1.5,STARTBUTTON_W,STARTBUTTON_H)
+        pygame.draw.rect(surface,END_BUTTON_COLOR,rect2)
+        s2 = self.titleFont.render("Skip" if not len(highlights) else "Choose",True,(0,0,0))
+        surface.blit(s2,(rect2.x + rect2.w /2 - s2.get_rect().w/2, rect2.y + rect2.h/2 - TITLE_SIZE/2))
+
+        deckHitbox = self.drawIconCount(surface,"assets/deck.png",ds,DECK_X,DECK_Y)
+        return (rects,rect2,deckHitbox)

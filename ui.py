@@ -7,6 +7,7 @@ from animation import MoveCardTo,getCardMovementAnimation,getEnemyMovementAnimat
 from cards import *
 from arrow import Arrow
 from decks import decks
+from state import Zone
 
 #The UI is implemented as a Finite State Machine.
 
@@ -130,9 +131,36 @@ class Paused(BaseUI):
         else:
             self.hover = []
 
+class CardReward(BaseUI):
+    def __init__(self,cards,next):
+        self.cards = cards
+        self.next = next
+        self.hover = []
+        self.selected = []
+        self.deckHitbox = None
+    def draw(self,game):
+        (self.cardRects,self.buttonRect,self.deckHitbox) = game.renderer.drawCardReward(game.surface,self.cards,len(game.deck),hover=self.hover,highlights=self.selected)
+    def input(self,game,event):
+        if event.type == MOUSEBUTTONDOWN and event.button == 1:
+            for i in range(len(self.cardRects)):
+                if pygame.rect.Rect(self.cardRects[i]).collidepoint(*event.pos):
+                    if i not in self.selected:
+                        self.selected = [i]
+                    else:
+                        self.selected = []
+                if pygame.rect.Rect(self.buttonRect).collidepoint(*event.pos):
+                    game.deck += [self.cards[c].id for c in self.selected]
+                    self.next()
+                if pygame.rect.Rect(self.deckHitbox).collidepoint(*event.pos):
+                    game.nextUI = BattleViewingCards(game.surface.copy(),Zone.DECK,zone=instantiateDeck(game.deck),next=self)
 
-
-
+        mousepos = pygame.mouse.get_pos()
+        for i in range(len(self.cardRects)):
+            if pygame.rect.Rect(self.cardRects[i]).collidepoint(mousepos):
+                self.hover = [i]
+                break
+        else:
+            self.hover = []
 
 class PlayUI(BaseUI):
     def animateGameChange(self,game,change,endTurn=False):
@@ -360,18 +388,20 @@ class BattleChoosingCard(PlayUI):
 
 
 class BattleViewingCards(BaseUI):
-    def __init__(self,background,which):
+    def __init__(self,background,which,zone=None,next=BattleIdle()):
         self.background = background
         self.which = which
+        self.zone = zone
         alphamask = pygame.Surface(self.background.get_rect().size,pygame.SRCALPHA)
         alphamask.fill((255,255,255,160))
         self.background.blit(alphamask,(0,0))
         self.scroll = 0
         self.hover = []
+        self.next = next
     def draw(self,game):
         game.surface.blit(self.background,(0,0))
         self.exitRect = game.renderer.drawExitViewer(game.surface)
-        self.cards = game.renderer.drawCardPile(game.surface,game.state.get_zone(self.which),self.which,self.scroll,self.hover)
+        self.cards = game.renderer.drawCardPile(game.surface,self.zone or game.state.get_zone(self.which),self.which,self.scroll,self.hover)
     def input(self,game,event):
         for (rect,card) in self.cards:
             if pygame.rect.Rect(rect).collidepoint(*pygame.mouse.get_pos()):
@@ -381,7 +411,7 @@ class BattleViewingCards(BaseUI):
             self.hover = []
         if event.type == MOUSEBUTTONDOWN and event.button == 1:
             if pygame.rect.Rect(self.exitRect).collidepoint(*event.pos):
-                game.nextUI = BattleIdle()
+                game.nextUI = self.next
         elif event.type == MOUSEBUTTONDOWN and event.button == 4:
             self.scroll -= 1
         elif event.type == MOUSEBUTTONDOWN and event.button == 5:

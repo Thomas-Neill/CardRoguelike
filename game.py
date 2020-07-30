@@ -5,7 +5,7 @@ from arrow import Arrow
 from render import CardRenderer,SCREEN_W,SCREEN_H
 from cards import *
 from state import GameState
-from ui import StartGame,BattleIdle,Paused,TitleScreen
+from ui import StartGame,BattleIdle,Paused,TitleScreen,CardReward
 from enemy import Beholder
 
 testEnemies = [Beholder(200,"Shmiddy"),Beholder(200,"Steven"),Beholder(200,"Joe")]
@@ -19,12 +19,13 @@ class Game:
         self.deck = None
         self.ui = TitleScreen()
         self.nextUI = None
-        #pygame.mouse.set_visible(False)
 
     def nextScene(self):
-        self.state = GameState(list(map(getCard,self.deck)))
-        self.state.enemies = testEnemies
-        self.nextUI = BattleIdle()
+        def next():
+            self.state = GameState(list(map(getCard,self.deck)))
+            self.state.enemies = testEnemies
+            self.nextUI = BattleIdle()
+        self.nextUI = CardReward(instantiateDeck([CARD_DIVINATION,CARD_FIREBLAST,CARD_MANARUNE]),next)
 
     def run(self):
         lastTime = pygame.time.get_ticks()

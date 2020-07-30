@@ -114,6 +114,8 @@ class Tutor(Card):
 cardPrototypes[CARD_TUTOR] = Tutor(1,"Tutor","assets/dummy.png","Search your deck \n for a card and put \n it in your hand.",NORMAL_COLOR,TARGET_CARD_IN_ZONE,target_zone=Zone.DECK)
 
 def getCard(id):
-    return copy.deepcopy(cardPrototypes[id])
+    c = copy.deepcopy(cardPrototypes[id])
+    c.id = id
+    return c
 
-instantiateDeck = lambda x: list(map(getCard,x))
+instantiateDeck = lambda d: [getCard(x) for x in d]
